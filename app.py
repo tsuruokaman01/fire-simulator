@@ -236,13 +236,20 @@ if mode == "⚡ かんたんモード":
         name="FIRE目標", line=dict(color="#F44336", width=2, dash="dash")))
     fire_e_idx = easy_fire_age - easy_age_now
     if 0 <= fire_e_idx < len(x_e):
-        fig_e.add_vline(x=x_e[fire_e_idx], line_dash="dot", line_color="orange",
-                        annotation_text="🔥 FIRE目標")
+        fig_e.add_shape(type="line", xref="x", yref="paper",
+            x0=x_e[fire_e_idx], x1=x_e[fire_e_idx], y0=0, y1=1,
+            line=dict(dash="dot", color="orange", width=2))
+        fig_e.add_annotation(x=x_e[fire_e_idx], y=1, yref="paper",
+            text="🔥 FIRE目標", showarrow=False, yanchor="bottom", font=dict(color="orange"))
     if not achieved_e.empty:
         a_idx = achieved_e.iloc[0]["年齢"] - easy_age_now
         if 0 <= a_idx < len(x_e):
-            fig_e.add_vline(x=x_e[a_idx], line_dash="dot", line_color="green",
-                            annotation_text=f"✅ FIRE達成({achieved_e.iloc[0]['年齢']}歳)")
+            fig_e.add_shape(type="line", xref="x", yref="paper",
+                x0=x_e[a_idx], x1=x_e[a_idx], y0=0, y1=1,
+                line=dict(dash="dot", color="green", width=2))
+            fig_e.add_annotation(x=x_e[a_idx], y=0.9, yref="paper",
+                text=f"✅ FIRE達成({achieved_e.iloc[0]['年齢']}歳)",
+                showarrow=False, yanchor="bottom", font=dict(color="green"))
     fig_e.update_layout(height=400, yaxis_title="万円",
                         legend=dict(orientation="h", y=-0.15),
                         margin=dict(t=40, b=80))
@@ -1099,8 +1106,11 @@ else:
 
         fire_idx = fire_age - boss_age_now
         if 0 <= fire_idx < len(x_labels):
-            fig.add_vline(x=x_labels[fire_idx], line_dash="dot", line_color="orange",
-                          annotation_text="🔥FIRE")
+            fig.add_shape(type="line", xref="x", yref="paper",
+                x0=x_labels[fire_idx], x1=x_labels[fire_idx], y0=0, y1=1,
+                line=dict(dash="dot", color="orange", width=2))
+            fig.add_annotation(x=x_labels[fire_idx], y=1, yref="paper",
+                text="🔥FIRE", showarrow=False, yanchor="bottom", font=dict(color="orange"))
 
         fig.add_trace(go.Bar(x=x_labels, y=df["世帯収入"]/10_000, name="世帯収入",
             marker_color="#66BB6A"), row=2, col=1)
