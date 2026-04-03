@@ -10,6 +10,69 @@ st.set_page_config(page_title="FIREシミュレーター", page_icon="🔥", lay
 import datetime
 BASE_YEAR = datetime.date.today().year
 
+# ===================== モバイル対応CSS =====================
+st.markdown("""
+<style>
+/* スマホ（768px以下）向け調整 */
+@media (max-width: 768px) {
+
+    /* メインエリアの左右余白を縮小 */
+    .block-container {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        padding-top: 16px !important;
+        max-width: 100% !important;
+    }
+
+    /* カラムを縦積みに */
+    [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 100% !important;
+    }
+
+    /* タブのラベルを小さく */
+    .stTabs [data-baseweb="tab"] {
+        font-size: 0.75em !important;
+        padding: 6px 8px !important;
+    }
+
+    /* ヒーローセクションのフォントサイズを縮小 */
+    .hero-title { font-size: 1.6em !important; }
+
+    /* スライダーのタッチ操作を改善 */
+    [data-testid="stSlider"] {
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+
+    /* メトリクスを見やすく */
+    [data-testid="metric-container"] {
+        padding: 8px !important;
+    }
+
+    /* ボタンをフルワイドに */
+    .stDownloadButton button, .stButton button {
+        width: 100% !important;
+    }
+
+    /* サイドバーを開いたときの幅を最適化 */
+    [data-testid="stSidebar"] {
+        min-width: 280px !important;
+        max-width: 320px !important;
+    }
+}
+
+/* タブレット（1024px以下）向け調整 */
+@media (max-width: 1024px) {
+    .block-container {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ===================== ユーティリティ =====================
 def _sf(val, default=0.0):
     """NaN・None・空文字を安全にfloatへ変換"""
@@ -49,8 +112,36 @@ def calc_takehome(gross_annual, spouse_deduct=0, dependents=0, ideco_annual=0):
     return gross_annual - social - it - rt
 
 # ===================== ヘッダー =====================
-st.title("🔥 FIREシミュレーター")
-st.caption("昇進・教育費・習い事まで設定できる、日本一解像度の高い無料FIREシミュレーター")
+st.markdown("""
+<div style="
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px;
+    padding: 40px 32px 32px 32px;
+    margin-bottom: 24px;
+">
+    <h1 style="color: white; font-size: 2.4em; margin: 0 0 8px 0;">🔥 FIREシミュレーター</h1>
+    <p style="color: #aac4e8; font-size: 1.1em; margin: 0 0 28px 0;">
+        昇進・教育費・習い事まで設定できる、日本一解像度の高い無料FIREシミュレーター
+    </p>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 18px; color: white; font-size: 0.9em;">
+            ⚡ <b>6項目</b>で即シミュレーション
+        </div>
+        <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 18px; color: white; font-size: 0.9em;">
+            🧮 年収→手取り<b>自動計算</b>
+        </div>
+        <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 18px; color: white; font-size: 0.9em;">
+            🎓 教育費・昇進まで<b>細かく設定</b>
+        </div>
+        <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 18px; color: white; font-size: 0.9em;">
+            📊 グラフで<b>リアルタイム</b>確認
+        </div>
+        <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 12px 18px; color: white; font-size: 0.9em;">
+            💾 設定を<b>保存・読み込み</b>可能
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ===================== モード切り替え =====================
 mode = st.radio("モードを選択", ["⚡ かんたんモード", "⚙️ 詳細モード"], horizontal=True)
@@ -98,6 +189,31 @@ if mode == "⚡ かんたんモード":
     fire_row_e = df_e[df_e["年齢"] == easy_fire_age]
     assets_at_fire = fire_row_e["資産"].values[0] if not fire_row_e.empty else 0
     gap_e = assets_at_fire - fire_target_easy
+
+    # 結果バナー
+    if gap_e >= 0:
+        st.markdown(f"""
+<div style="background: linear-gradient(135deg, #1b5e20, #2e7d32);
+     border-radius: 12px; padding: 20px 28px; margin-bottom: 16px; color: white;">
+    <div style="font-size: 1.8em; font-weight: bold;">✅ {easy_fire_age}歳FIREは達成できます！</div>
+    <div style="font-size: 1.1em; margin-top: 6px; color: #c8e6c9;">
+        目標額より <b>{gap_e/10_000:.0f}万円</b> 上回る見込みです。
+    </div>
+</div>""", unsafe_allow_html=True)
+    else:
+        lack = abs(gap_e)
+        months = max(1, (easy_fire_age - easy_age_now) * 12)
+        extra = lack / months
+        achieve_age = achieved_e.iloc[0]["年齢"] if not achieved_e.empty else None
+        msg = f"現在のペースだと <b>{achieve_age}歳</b> でFIRE達成できます。" if achieve_age else "現在のペースでは期間内の達成が難しい状況です。"
+        st.markdown(f"""
+<div style="background: linear-gradient(135deg, #b71c1c, #c62828);
+     border-radius: 12px; padding: 20px 28px; margin-bottom: 16px; color: white;">
+    <div style="font-size: 1.8em; font-weight: bold;">❌ {easy_fire_age}歳FIREには {lack/10_000:.0f}万円 不足</div>
+    <div style="font-size: 1.1em; margin-top: 6px; color: #ffcdd2;">
+        毎月 <b>+{extra/10_000:.1f}万円</b> の積立増または収入増が必要です。<br>{msg}
+    </div>
+</div>""", unsafe_allow_html=True)
 
     k1, k2, k3 = st.columns(3)
     k1.metric("必要資産額（4%ルール）", f"{fire_target_easy/10_000:.0f}万円")
