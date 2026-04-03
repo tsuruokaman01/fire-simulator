@@ -226,7 +226,10 @@ if mode == "⚡ かんたんモード":
         k3.metric("目標との差", f"{gap_e/10_000:.0f}万円 ❌", delta="不足", delta_color="inverse")
 
     # グラフ
-    x_e = [f"{r['年度']}({r['年齢']}歳)" for _, r in df_e.iterrows()]
+    x_e = [
+        f"{r['年度']}({r['年齢']}歳)" if i % 5 == 0 else ""
+        for i, (_, r) in enumerate(df_e.iterrows())
+    ]
     fig_e = go.Figure()
     fig_e.add_trace(go.Scatter(x=x_e, y=df_e["資産"]/10_000,
         name="資産推移", line=dict(color="#2196F3", width=3),
@@ -243,8 +246,10 @@ if mode == "⚡ かんたんモード":
             fig_e.add_vline(x=a_idx, line_dash="dot", line_color="green",
                             annotation_text=f"✅ FIRE達成({achieved_e.iloc[0]['年齢']}歳)")
     fig_e.update_layout(height=400, yaxis_title="万円",
-                        legend=dict(orientation="h", y=1.05), margin=dict(t=40))
-    st.plotly_chart(fig_e, use_container_width=True)
+                        legend=dict(orientation="h", y=-0.12),
+                        margin=dict(t=40, b=80))
+    fig_e.update_xaxes(tickangle=45)
+    st.plotly_chart(fig_e, use_container_width=True, config={"responsive": True})
 
     # 診断コメント
     if gap_e >= 0:
@@ -416,6 +421,7 @@ else:
     # ===================== 収入 =====================
     with tab_income:
         st.subheader("💼 収入の設計")
+        st.markdown("💡 **まず収入・支出・資産を入力して「結果・分析」タブで確認してください。**")
 
         # --- 手取り計算の条件（全計算に共通で使う） ---
         st.markdown("#### 🔧 手取り計算の条件")
@@ -1011,10 +1017,57 @@ else:
     # ===================== 結果 =====================
     with tab_result:
         st.subheader("📊 シミュレーション結果")
+        st.markdown("💡 **他のタブで詳細設定をすると、より精度の高いシミュレーションができます。**")
 
         fire_row    = df[df["年齢"] == fire_age]
         fire_assets = fire_row["純資産"].values[0] if not fire_row.empty else 0
         gap         = fire_assets - fire_target
+
+        # ---- 感情的インパクトバナー ----
+        _years_to_fire = max(0, fire_age - boss_age_now)
+        achieved = df[(df["純資産"] >= df["FIRE目標"]) & (df["FIRE"] == "")]["年齢"]
+        if gap >= 0:
+            st.markdown(f"""
+<div style="background: linear-gradient(135deg, #1b5e20, #2e7d32);
+     border-radius: 12px; padding: 20px 28px; margin-bottom: 16px; color: white;">
+    <div style="font-size: 2.0em; font-weight: bold;">✅ {fire_age}歳FIREは達成できます！</div>
+    <div style="font-size: 1.5em; font-weight: bold; margin-top: 10px; color: #c8e6c9;">
+        あと <span style="font-size:1.3em; color:#ffffff;">{_years_to_fire}年</span>・
+        目標より <span style="font-size:1.3em; color:#ffffff;">{gap/10_000:.0f}万円</span> 余裕あり
+    </div>
+</div>""", unsafe_allow_html=True)
+        else:
+            _lack = abs(gap)
+            _remaining_months = max(1, _years_to_fire * 12)
+            _extra_pm = _lack / _remaining_months
+            _achieve_msg = f"現在のペースだと <b>{achieved.iloc[0]}歳</b> でFIRE達成できます。" if not achieved.empty else "現在のペースでは期間内の達成が難しい状況です。"
+            st.markdown(f"""
+<div style="background: linear-gradient(135deg, #b71c1c, #c62828);
+     border-radius: 12px; padding: 20px 28px; margin-bottom: 16px; color: white;">
+    <div style="font-size: 2.0em; font-weight: bold;">❌ {fire_age}歳FIREには不足があります</div>
+    <div style="font-size: 1.5em; font-weight: bold; margin-top: 10px; color: #ffcdd2;">
+        あと <span style="font-size:1.3em; color:#ffffff;">{_years_to_fire}年</span>・
+        あと <span style="font-size:1.3em; color:#ffffff;">{_lack/10_000:.0f}万円</span> 不足
+    </div>
+    <div style="font-size: 1.0em; margin-top: 8px; color: #ffcdd2;">
+        毎月 <b>+{_extra_pm/10_000:.1f}万円</b> の積立増または収入増が必要です。{_achieve_msg}
+    </div>
+</div>""", unsafe_allow_html=True)
+
+        # ---- シェアボタン（バナー直下） ----
+        _share_msg_top = (
+            f"🔥 FIREシミュレーターで試算しました！\n"
+            f"目標: {fire_age}歳FIRE / 必要資産: {fire_target/10_000:.0f}万円\n"
+            f"{'✅ 達成ペース！' if gap >= 0 else f'❌ {abs(gap)/10_000:.0f}万円不足'}\n"
+            f"#FIRE #資産形成 #FIREシミュレーター"
+        )
+        _encoded_top = urllib.parse.quote(_share_msg_top)
+        _sc_top1, _sc_top2 = st.columns(2)
+        _sc_top1.link_button("𝕏 (Twitter) でシェア",
+            f"https://twitter.com/intent/tweet?text={_encoded_top}", use_container_width=True)
+        _sc_top2.link_button("📘 LINEでシェア",
+            f"https://social-plugins.line.me/lineit/share?url=https://fire-simulator.streamlit.app&text={_encoded_top}",
+            use_container_width=True)
 
         k1, k2, k3, k4 = st.columns(4)
         k1.metric("FIRE目標年", f"{fire_year}年（{fire_age}歳）")
@@ -1023,7 +1076,6 @@ else:
             k3.metric("目標との差", f"+{gap/10_000:.0f}万円 ✅", delta="達成")
         else:
             k3.metric("目標との差", f"{gap/10_000:.0f}万円 ❌", delta="不足", delta_color="inverse")
-        achieved = df[(df["純資産"] >= df["FIRE目標"]) & (df["FIRE"] == "")]["年齢"]
         if not achieved.empty:
             a_age = achieved.iloc[0]
             k4.metric("実際にFIRE可能", f"{a_age}歳（{BASE_YEAR + (a_age - boss_age_now)}年）")
@@ -1033,7 +1085,10 @@ else:
         st.divider()
 
         # グラフ
-        x_labels = [f"{r['年度']}<br>({r['年齢']}歳)" for _, r in df.iterrows()]
+        x_labels = [
+            f"{r['年度']}({r['年齢']}歳)" if i % 5 == 0 else ""
+            for i, (_, r) in enumerate(df.iterrows())
+        ]
         fig = make_subplots(rows=3, cols=1,
             subplot_titles=("純資産推移（万円）", "収入 vs 支出（万円）", "支出内訳（万円）"),
             vertical_spacing=0.1, row_heights=[0.4, 0.3, 0.3])
@@ -1067,10 +1122,12 @@ else:
         fig.add_trace(go.Bar(x=x_labels, y=df["特別支出"]/10_000, name="特別支出",
             marker_color="#26C6DA"), row=3, col=1)
 
-        fig.update_layout(height=900, barmode="stack",
-            legend=dict(orientation="h", y=1.03), margin=dict(t=60, b=20))
+        fig.update_layout(height=1000, barmode="stack",
+            legend=dict(orientation="h", y=-0.08),
+            margin=dict(t=60, b=120))
         fig.update_yaxes(title_text="万円")
-        st.plotly_chart(fig, use_container_width=True)
+        fig.update_xaxes(tickangle=45)
+        st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
         # 診断
         st.divider()
@@ -1089,22 +1146,6 @@ else:
             loan_at_fire = fire_row["ローン残債"].values[0] if not fire_row.empty else 0
             if loan_at_fire > 0:
                 st.warning(f"🏠 FIRE時点のローン残債: **{loan_at_fire/10_000:.0f}万円**")
-
-        # SNSシェア
-        st.divider()
-        share_msg = (
-            f"🔥 FIREシミュレーターで試算しました！\n"
-            f"目標: {fire_age}歳FIRE / 必要資産: {fire_target/10_000:.0f}万円\n"
-            f"{'✅ 達成ペース！' if gap >= 0 else f'❌ {abs(gap)/10_000:.0f}万円不足'}\n"
-            f"#FIRE #資産形成 #FIREシミュレーター"
-        )
-        encoded_msg = urllib.parse.quote(share_msg)
-        sc1, sc2 = st.columns(2)
-        sc1.link_button("𝕏 (Twitter) でシェア",
-            f"https://twitter.com/intent/tweet?text={encoded_msg}", use_container_width=True)
-        sc2.link_button("📘 LINEでシェア",
-            f"https://social-plugins.line.me/lineit/share?url=https://fire-simulator.streamlit.app&text={encoded_msg}",
-            use_container_width=True)
 
         # 詳細テーブル
         with st.expander("📋 年度別詳細データ"):
