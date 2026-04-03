@@ -175,6 +175,24 @@ else:
             "d_cur_other", "d_nisa_used", "d_has_loan", "d_loan_bal",
             "d_loan_pmt", "d_loan_type", "d_loan_rate", "d_loan_rate_f",
             "d_rate_chg_age", "d_mgmt_fee",
+            "d_num_children",
+            *[f"birth_{i}" for i in range(3)],
+            *[f"elem_{i}"  for i in range(3)],
+            *[f"mid_{i}"   for i in range(3)],
+            *[f"high_{i}"  for i in range(3)],
+            *[f"uni_{i}"   for i in range(3)],
+            *[f"as_{i}"    for i in range(3)],
+            *[f"ae_{i}"    for i in range(3)],
+            *[f"ac_{i}"    for i in range(3)],
+            # 支出タブ
+            "d_exp_food", "d_exp_eatout", "d_exp_daily", "d_exp_clothes", "d_exp_medical",
+            "d_exp_gas", "d_exp_carmaint", "d_exp_transit", "d_exp_phone", "d_exp_subscr",
+            "d_exp_hobby", "d_exp_travel", "d_exp_social", "d_exp_misc",
+            # 保険タブ
+            "d_ins_b_life", "d_ins_b_life_end", "d_ins_b_med", "d_ins_b_other",
+            "wl", "wle", "wm", "wo",
+            # 収支サマリー
+            "d_my_living",
         ]
         for _k in _scalar_keys:
             if _k in _cfg:
@@ -197,6 +215,15 @@ else:
         "d_cur_other", "d_nisa_used", "d_has_loan", "d_loan_bal",
         "d_loan_pmt", "d_loan_type", "d_loan_rate", "d_loan_rate_f",
         "d_rate_chg_age", "d_mgmt_fee",
+        "d_num_children",
+        *[f"birth_{i}" for i in range(3)],
+        *[f"elem_{i}"  for i in range(3)],
+        *[f"mid_{i}"   for i in range(3)],
+        *[f"high_{i}"  for i in range(3)],
+        *[f"uni_{i}"   for i in range(3)],
+        *[f"as_{i}"    for i in range(3)],
+        *[f"ae_{i}"    for i in range(3)],
+        *[f"ac_{i}"    for i in range(3)],
     ]
     _save_data = {k: st.session_state[k] for k in _scalar_save_keys if k in st.session_state}
     for _tk, _tv in {
@@ -401,24 +428,24 @@ else:
         c1, c2, c3 = st.columns(3)
         with c1:
             st.markdown("#### 🍚 食・日常")
-            exp_food    = st.slider("食費（自炊）", 0.0, 20.0, 4.0, 0.5)
-            exp_eatout  = st.slider("外食・テイクアウト", 0.0, 20.0, 2.0, 0.5)
-            exp_daily   = st.slider("日用品・消耗品", 0.0, 10.0, 1.0, 0.5)
-            exp_clothes = st.slider("被服・美容", 0.0, 10.0, 1.0, 0.5)
-            exp_medical = st.slider("医療・薬代", 0.0, 10.0, 0.5, 0.5)
+            exp_food    = st.slider("食費（自炊）", 0.0, 20.0, 4.0, 0.5, key="d_exp_food")
+            exp_eatout  = st.slider("外食・テイクアウト", 0.0, 20.0, 2.0, 0.5, key="d_exp_eatout")
+            exp_daily   = st.slider("日用品・消耗品", 0.0, 10.0, 1.0, 0.5, key="d_exp_daily")
+            exp_clothes = st.slider("被服・美容", 0.0, 10.0, 1.0, 0.5, key="d_exp_clothes")
+            exp_medical = st.slider("医療・薬代", 0.0, 10.0, 0.5, 0.5, key="d_exp_medical")
         with c2:
             st.markdown("#### 🚗 交通・通信")
-            exp_gas      = st.slider("ガソリン代", 0.0, 10.0, 1.0, 0.5)
-            exp_carmaint = st.slider("車維持費（月均し）", 0.0, 10.0, 1.0, 0.5)
-            exp_transit  = st.slider("電車・バス等", 0.0, 10.0, 0.5, 0.5)
-            exp_phone    = st.slider("スマホ・通信費", 0.0, 5.0, 0.5, 0.1)
-            exp_subscr   = st.slider("サブスク", 0.0, 5.0, 0.3, 0.1)
+            exp_gas      = st.slider("ガソリン代", 0.0, 10.0, 1.0, 0.5, key="d_exp_gas")
+            exp_carmaint = st.slider("車維持費（月均し）", 0.0, 10.0, 1.0, 0.5, key="d_exp_carmaint")
+            exp_transit  = st.slider("電車・バス等", 0.0, 10.0, 0.5, 0.5, key="d_exp_transit")
+            exp_phone    = st.slider("スマホ・通信費", 0.0, 5.0, 0.5, 0.1, key="d_exp_phone")
+            exp_subscr   = st.slider("サブスク", 0.0, 5.0, 0.3, 0.1, key="d_exp_subscr")
         with c3:
             st.markdown("#### 🎉 娯楽・その他")
-            exp_hobby   = st.slider("趣味・娯楽", 0.0, 20.0, 1.0, 0.5)
-            exp_travel  = st.number_input("旅行（年額 万円）", 0.0, 300.0, 15.0, 1.0)
-            exp_social  = st.slider("交際費・ギフト", 0.0, 10.0, 1.0, 0.5)
-            exp_misc    = st.slider("雑費・その他", 0.0, 10.0, 1.0, 0.5)
+            exp_hobby   = st.slider("趣味・娯楽", 0.0, 20.0, 1.0, 0.5, key="d_exp_hobby")
+            exp_travel  = st.number_input("旅行（年額 万円）", 0.0, 300.0, 15.0, 1.0, key="d_exp_travel")
+            exp_social  = st.slider("交際費・ギフト", 0.0, 10.0, 1.0, 0.5, key="d_exp_social")
+            exp_misc    = st.slider("雑費・その他", 0.0, 10.0, 1.0, 0.5, key="d_exp_misc")
 
         monthly_living_base = (
             exp_food + exp_eatout + exp_daily + exp_clothes + exp_medical
@@ -501,7 +528,7 @@ else:
     # ===================== 教育費 =====================
     with tab_edu:
         st.subheader("🎓 子どもの教育費設定")
-        num_children = st.selectbox("子どもの人数", [0, 1, 2, 3], index=0)
+        num_children = st.selectbox("子どもの人数", [0, 1, 2, 3], index=0, key="d_num_children")
 
         ELEM_COST = {"公立": 80_000, "私立": 900_000}
         MID_COST  = {"公立": 180_000, "私立": 900_000}
@@ -547,10 +574,10 @@ else:
         ic1, ic2 = st.columns(2)
         with ic1:
             st.markdown("#### 本人")
-            ins_b_life     = st.number_input("死亡保険（月額 円）",    0, 100000, 10000)
-            ins_b_life_end = st.number_input("死亡保険 終了年齢",      boss_age_now, 100, 65)
-            ins_b_med      = st.number_input("医療保険（月額 円）",    0, 50000, 2000)
-            ins_b_other    = st.number_input("その他（月額 円）",      0, 50000, 0)
+            ins_b_life     = st.number_input("死亡保険（月額 円）",    0, 100000, 10000, key="d_ins_b_life")
+            ins_b_life_end = st.number_input("死亡保険 終了年齢",      boss_age_now, 100, 65, key="d_ins_b_life_end")
+            ins_b_med      = st.number_input("医療保険（月額 円）",    0, 50000, 2000, key="d_ins_b_med")
+            ins_b_other    = st.number_input("その他（月額 円）",      0, 50000, 0, key="d_ins_b_other")
         with ic2:
             st.markdown("#### 配偶者")
             ins_w_life     = st.number_input("死亡保険（月額 円）",    0, 100000, 8000, key="wl")
