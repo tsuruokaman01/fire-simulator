@@ -186,44 +186,37 @@ else:
         del st.session_state["_loaded_cfg"]
         st.rerun()
 
-    with st.sidebar:
-        # ---- 設定の保存・読み込み ----
-        st.subheader("💾 設定の保存・読み込み")
+    # ---- 保存・読み込み用データ準備（サイドバー外で先に計算） ----
+    import json as _json
+    _scalar_save_keys = [
+        "d_age_now", "d_fire_age", "d_return", "d_ideco_ret", "d_other_ret",
+        "d_inflation", "d_fire_monthly", "d_fire_rule", "d_fire_rate_custom",
+        "d_spouse", "d_deps", "d_ideco_m", "c_gross", "c_bpct",
+        "d_has_ret", "d_ret_amt", "d_ret_age", "d_wife_cur",
+        "d_has_side", "d_cur_nisa", "d_cur_ideco", "d_cur_dep",
+        "d_cur_other", "d_nisa_used", "d_has_loan", "d_loan_bal",
+        "d_loan_pmt", "d_loan_type", "d_loan_rate", "d_loan_rate_f",
+        "d_rate_chg_age", "d_mgmt_fee",
+    ]
+    _save_data = {k: st.session_state[k] for k in _scalar_save_keys if k in st.session_state}
+    for _tk, _tv in {
+        "tbl_milestones": st.session_state.get("tbl_milestones"),
+        "tbl_wife":       st.session_state.get("tbl_wife"),
+        "tbl_invest":     st.session_state.get("tbl_invest"),
+        "tbl_car":        st.session_state.get("tbl_car"),
+        "tbl_renov":      st.session_state.get("tbl_renov"),
+        "tbl_side":       st.session_state.get("tbl_side"),
+    }.items():
+        if _tv is not None:
+            _save_data[_tk] = _tv
 
-        # 保存
-        _scalar_save_keys = [
-            "d_age_now", "d_fire_age", "d_return", "d_ideco_ret", "d_other_ret",
-            "d_inflation", "d_fire_monthly", "d_fire_rule", "d_fire_rate_custom",
-            "d_spouse", "d_deps", "d_ideco_m", "c_gross", "c_bpct",
-            "d_has_ret", "d_ret_amt", "d_ret_age", "d_wife_cur",
-            "d_has_side", "d_cur_nisa", "d_cur_ideco", "d_cur_dep",
-            "d_cur_other", "d_nisa_used", "d_has_loan", "d_loan_bal",
-            "d_loan_pmt", "d_loan_type", "d_loan_rate", "d_loan_rate_f",
-            "d_rate_chg_age", "d_mgmt_fee",
-        ]
-        _save_data = {k: st.session_state[k] for k in _scalar_save_keys if k in st.session_state}
-        _tbl_save_map = {
-            "tbl_milestones": st.session_state.get("tbl_milestones"),
-            "tbl_wife":       st.session_state.get("tbl_wife"),
-            "tbl_invest":     st.session_state.get("tbl_invest"),
-            "tbl_car":        st.session_state.get("tbl_car"),
-            "tbl_renov":      st.session_state.get("tbl_renov"),
-            "tbl_side":       st.session_state.get("tbl_side"),
-        }
-        for _tk, _tv in _tbl_save_map.items():
-            if _tv is not None:
-                _save_data[_tk] = _tv
-        import json as _json
-        st.download_button(
-            label="設定を保存 (.json)",
-            data=_json.dumps(_save_data, ensure_ascii=False, indent=2),
-            file_name="fire_simulator_config.json",
-            mime="application/json",
-            use_container_width=True,
+    # ---- 読み込みエリア（メイン画面上部・折りたたみ） ----
+    with st.expander("📂 設定を読み込む（保存済みファイルがある場合）"):
+        _uploaded = st.file_uploader(
+            "保存したJSONファイルを選択してください",
+            type="json",
+            label_visibility="visible",
         )
-
-        # 読み込み
-        _uploaded = st.file_uploader("設定を読み込む", type="json", label_visibility="collapsed")
         if _uploaded is not None:
             try:
                 _loaded = _json.loads(_uploaded.read().decode("utf-8"))
@@ -232,6 +225,16 @@ else:
             except Exception as _e:
                 st.error(f"読み込みエラー: {_e}")
 
+    with st.sidebar:
+        # ---- 保存ボタンのみ ----
+        st.download_button(
+            label="💾 設定を保存 (.json)",
+            data=_json.dumps(_save_data, ensure_ascii=False, indent=2),
+            file_name="fire_simulator_config.json",
+            mime="application/json",
+            use_container_width=True,
+            help="現在の設定をJSONファイルとして保存します",
+        )
         st.divider()
         st.header("🎯 基本設定")
         boss_age_now = st.number_input("あなたの現在の年齢", 20, 70, 30, key="d_age_now")
