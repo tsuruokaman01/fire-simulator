@@ -226,10 +226,8 @@ if mode == "⚡ かんたんモード":
         k3.metric("目標との差", f"{gap_e/10_000:.0f}万円 ❌", delta="不足", delta_color="inverse")
 
     # グラフ
-    x_e = [
-        f"{r['年度']}({r['年齢']}歳)" if i % 5 == 0 else ""
-        for i, (_, r) in enumerate(df_e.iterrows())
-    ]
+    x_e = [f"{r['年度']}({r['年齢']}歳)" for _, r in df_e.iterrows()]
+    _tick_vals_e  = [x_e[i] for i in range(0, len(x_e), 5)]
     fig_e = go.Figure()
     fig_e.add_trace(go.Scatter(x=x_e, y=df_e["資産"]/10_000,
         name="資産推移", line=dict(color="#2196F3", width=3),
@@ -238,17 +236,17 @@ if mode == "⚡ かんたんモード":
         name="FIRE目標", line=dict(color="#F44336", width=2, dash="dash")))
     fire_e_idx = easy_fire_age - easy_age_now
     if 0 <= fire_e_idx < len(x_e):
-        fig_e.add_vline(x=fire_e_idx, line_dash="dot", line_color="orange",
+        fig_e.add_vline(x=x_e[fire_e_idx], line_dash="dot", line_color="orange",
                         annotation_text="🔥 FIRE目標")
     if not achieved_e.empty:
         a_idx = achieved_e.iloc[0]["年齢"] - easy_age_now
         if 0 <= a_idx < len(x_e):
-            fig_e.add_vline(x=a_idx, line_dash="dot", line_color="green",
+            fig_e.add_vline(x=x_e[a_idx], line_dash="dot", line_color="green",
                             annotation_text=f"✅ FIRE達成({achieved_e.iloc[0]['年齢']}歳)")
     fig_e.update_layout(height=400, yaxis_title="万円",
-                        legend=dict(orientation="h", y=-0.12),
+                        legend=dict(orientation="h", y=-0.15),
                         margin=dict(t=40, b=80))
-    fig_e.update_xaxes(tickangle=45)
+    fig_e.update_xaxes(tickmode="array", tickvals=_tick_vals_e, tickangle=45)
     st.plotly_chart(fig_e, use_container_width=True, config={"responsive": True})
 
     # 診断コメント
@@ -1085,13 +1083,11 @@ else:
         st.divider()
 
         # グラフ
-        x_labels = [
-            f"{r['年度']}({r['年齢']}歳)" if i % 5 == 0 else ""
-            for i, (_, r) in enumerate(df.iterrows())
-        ]
+        x_labels = [f"{r['年度']}({r['年齢']}歳)" for _, r in df.iterrows()]
+        _tick_vals  = [x_labels[i] for i in range(0, len(x_labels), 5)]
         fig = make_subplots(rows=3, cols=1,
             subplot_titles=("純資産推移（万円）", "収入 vs 支出（万円）", "支出内訳（万円）"),
-            vertical_spacing=0.1, row_heights=[0.4, 0.3, 0.3])
+            vertical_spacing=0.12, row_heights=[0.4, 0.3, 0.3])
 
         fig.add_trace(go.Scatter(x=x_labels, y=df["純資産"]/10_000, name="純資産",
             line=dict(color="#2196F3", width=3), fill="tozeroy",
@@ -1103,8 +1099,8 @@ else:
 
         fire_idx = fire_age - boss_age_now
         if 0 <= fire_idx < len(x_labels):
-            fig.add_vline(x=fire_idx, line_dash="dot", line_color="orange",
-                          annotation_text="🔥FIRE", row=1, col=1)
+            fig.add_vline(x=x_labels[fire_idx], line_dash="dot", line_color="orange",
+                          annotation_text="🔥FIRE")
 
         fig.add_trace(go.Bar(x=x_labels, y=df["世帯収入"]/10_000, name="世帯収入",
             marker_color="#66BB6A"), row=2, col=1)
@@ -1123,10 +1119,10 @@ else:
             marker_color="#26C6DA"), row=3, col=1)
 
         fig.update_layout(height=1000, barmode="stack",
-            legend=dict(orientation="h", y=-0.08),
-            margin=dict(t=60, b=120))
+            legend=dict(orientation="h", y=-0.06, x=0),
+            margin=dict(t=60, b=140))
         fig.update_yaxes(title_text="万円")
-        fig.update_xaxes(tickangle=45)
+        fig.update_xaxes(tickmode="array", tickvals=_tick_vals, tickangle=45)
         st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
         # 診断
