@@ -10,6 +10,18 @@ st.set_page_config(page_title="FIREシミュレーター", page_icon="🔥", lay
 import datetime
 BASE_YEAR = datetime.date.today().year
 
+# ===================== Google Analytics =====================
+st.markdown("""
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-E4E5DMBDML"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-E4E5DMBDML');
+</script>
+""", unsafe_allow_html=True)
+
 # ===================== モバイル対応CSS =====================
 st.markdown("""
 <style>
