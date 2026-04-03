@@ -157,8 +157,10 @@ if mode == "⚡ かんたんモード":
         easy_age_now  = st.number_input("現在の年齢", 20, 70, 30, key="e_age")
         easy_fire_age = st.slider("🔥 FIRE目標年齢", 40, 75, 50, key="e_fage")
     with s2:
-        easy_income   = st.number_input("世帯手取り月収（万円）", 10, 200, 40, key="e_inc")  # 参考表示用
-        easy_invest   = st.slider("毎月の積立額（万円）", 0, 50, 10, key="e_inv")
+        easy_income   = st.number_input("世帯手取り月収（万円）", 10, 200, 40, key="e_inc")
+        easy_invest_pct = st.slider("毎月の積立率（%）", 0, 80, 25, key="e_inv",
+            help="月収のうち投資に回す割合。目安は20〜30%。")
+        easy_invest = easy_income * easy_invest_pct / 100
     with s3:
         easy_assets   = st.number_input("現在の金融資産（万円）", 0, 10000, 300, key="e_ast")
         easy_fire_exp = st.slider("FIRE後の月額生活費（万円）", 10, 60, 25, key="e_exp")
@@ -272,8 +274,7 @@ if mode == "⚡ かんたんモード":
         f"https://social-plugins.line.me/lineit/share?url=https://fire-simulator.streamlit.app&text={encoded}",
         use_container_width=True)
 
-    invest_ratio = easy_invest / easy_income * 100 if easy_income > 0 else 0
-    st.caption(f"💡 積立比率: 月収 {easy_income}万円 に対して {easy_invest}万円 = **{invest_ratio:.0f}%**（目安: 20〜30%）")
+    st.caption(f"💡 月収 {easy_income}万円 × {easy_invest_pct}% = 毎月 **{easy_invest:.1f}万円** を積立（目安: 20〜30%）")
     st.divider()
     st.caption("📊 より細かい設定（昇進・退職金・教育費・保険など）は **詳細モード** をお試しください。")
 
