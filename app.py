@@ -296,7 +296,10 @@ if mode == "⚡ かんたんモード":
         f"https://social-plugins.line.me/lineit/share?url=https://fire-simulator.streamlit.app&text={encoded}",
         use_container_width=True)
 
-    st.caption(f"💡 月収 {easy_income}万円 × {easy_invest_pct}% = 毎月 **{easy_invest:.1f}万円** を積立（目安: 20〜30%）")
+    if easy_invest_pct == 0:
+        st.warning("⚠️ 積立率が0%です。積立をすると資産形成が加速します。目安は月収の20〜30%。")
+    else:
+        st.caption(f"💡 月収 {easy_income}万円 × {easy_invest_pct}% = 毎月 **{easy_invest:.1f}万円** を積立（目安: 20〜30%）")
     st.divider()
     st.caption("📊 より細かい設定（昇進・退職金・教育費・保険など）は **詳細モード** をお試しください。")
 
@@ -323,6 +326,7 @@ else:
             *[f"as_{i}"    for i in range(3)],
             *[f"ae_{i}"    for i in range(3)],
             *[f"ac_{i}"    for i in range(3)],
+            *[f"kinder_{i}" for i in range(3)],
             # 支出タブ
             "d_exp_food", "d_exp_eatout", "d_exp_daily", "d_exp_clothes", "d_exp_medical",
             "d_exp_gas", "d_exp_carmaint", "d_exp_transit", "d_exp_phone", "d_exp_subscr",
@@ -363,6 +367,16 @@ else:
         *[f"as_{i}"    for i in range(3)],
         *[f"ae_{i}"    for i in range(3)],
         *[f"ac_{i}"    for i in range(3)],
+        *[f"kinder_{i}" for i in range(3)],
+        # 支出タブ
+        "d_exp_food", "d_exp_eatout", "d_exp_daily", "d_exp_clothes", "d_exp_medical",
+        "d_exp_gas", "d_exp_carmaint", "d_exp_transit", "d_exp_phone", "d_exp_subscr",
+        "d_exp_hobby", "d_exp_travel", "d_exp_social", "d_exp_misc",
+        # 保険タブ
+        "d_ins_b_life", "d_ins_b_life_end", "d_ins_b_med", "d_ins_b_other",
+        "wl", "wle", "wm", "wo",
+        # 収支サマリー
+        "d_my_living",
     ]
     _save_data = {k: st.session_state[k] for k in _scalar_save_keys if k in st.session_state}
     for _tk, _tv in {
@@ -583,7 +597,7 @@ else:
         with c3:
             st.markdown("#### 🎉 娯楽・その他")
             exp_hobby   = st.slider("趣味・娯楽", 0.0, 20.0, 1.0, 0.5, key="d_exp_hobby")
-            exp_travel  = st.number_input("旅行（年額 万円）", 0.0, 300.0, 15.0, 1.0, key="d_exp_travel")
+            exp_travel  = st.slider("旅行（年額 万円）", 0.0, 100.0, 15.0, 1.0, key="d_exp_travel")
             exp_social  = st.slider("交際費・ギフト", 0.0, 10.0, 1.0, 0.5, key="d_exp_social")
             exp_misc    = st.slider("雑費・その他", 0.0, 10.0, 1.0, 0.5, key="d_exp_misc")
 
@@ -648,7 +662,7 @@ else:
                     age = boss_age_now + i
                     r   = loan_rate_future if age >= rate_change_age else loan_rate_now
                     interest  = b * r
-                    principal = monthly_loan_pmt * 12 - interest
+                    principal = max(0, monthly_loan_pmt * 12 - interest)
                     b = max(0, b - principal)
                     if b == 0:
                         payoff_year = BASE_YEAR + i
@@ -679,6 +693,10 @@ else:
             "私立理系（自宅）": 1_400_000, "私立理系（自宅外）": 2_200_000,
             "行かない": 0,
         }
+        KINDER_COST = {
+            "公立幼稚園": 220_000, "私立幼稚園": 530_000,
+            "認可保育園": 200_000, "行かない/無償化": 0,
+        }
 
         children = []
         names    = ["第1子", "第2子", "第3子"]
@@ -698,14 +716,22 @@ else:
                     mid   = st.selectbox("中学校", ["公立", "私立"], key=f"mid_{i}")
                     high  = st.selectbox("高校",   ["公立", "私立"], key=f"high_{i}")
                     uni   = st.selectbox("大学",   list(UNI_COST.keys()), index=2, key=f"uni_{i}")
+                    kinder = st.selectbox("保育・幼稚園（3〜5歳）", list(KINDER_COST.keys()), key=f"kinder_{i}")
                 with cc2:
                     act_start = st.number_input("習い事 開始年齢", 0, 18, d["act_start"], key=f"as_{i}")
                     act_end   = st.number_input("習い事 終了年齢", 0, 22, d["act_end"],   key=f"ae_{i}")
                     act_cost  = st.number_input("習い事 月額（万円）", 0.0, 20.0, d["act"], 0.1, key=f"ac_{i}") * 10_000
                 with cc3:
-                    total_edu_cost = ELEM_COST[elem]*6 + MID_COST[mid]*3 + HIGH_COST[high]*3 + UNI_COST[uni]*4
-                    st.metric("教育費総額（概算）", f"{total_edu_cost/10_000:.0f}万円")
+                    if act_end < act_start:
+                        st.warning("⚠️ 終了年齢が開始年齢より前です")
+                    act_years = max(0, act_end - act_start + 1)
+                    act_total = act_cost * 12 * act_years
+                    total_edu_cost = KINDER_COST[kinder]*3 + ELEM_COST[elem]*6 + MID_COST[mid]*3 + HIGH_COST[high]*3 + UNI_COST[uni]*4 + act_total
+                    st.metric("教育費総額（概算）", f"{total_edu_cost/10_000:.0f}万円",
+                              help="幼稚園(3年)+学校教育費+習い事費用の合計（0〜2歳保育費除く）")
+                    st.caption(f"うち習い事: {act_total/10_000:.0f}万円（{act_years}年間）")
                 children.append({"birth": birth, "elem": elem, "mid": mid, "high": high, "uni": uni,
+                                  "kinder": kinder,
                                   "act_start": act_start, "act_end": act_end, "act_cost": act_cost})
 
     # ===================== 保険 =====================
@@ -809,7 +835,11 @@ else:
 
         _income_m  = current_monthly / 10_000
         _loan_m    = monthly_loan_pmt / 10_000 if has_loan else 0.0
-        _ins_m     = total_ins / 10_000
+        # 現在年齢で死亡保険の終了チェック
+        _ins_now = ins_b_med + ins_b_other + ins_w_med + ins_w_other
+        if boss_age_now < ins_b_life_end: _ins_now += ins_b_life
+        if boss_age_now < ins_w_life_end: _ins_now += ins_w_life
+        _ins_m     = _ins_now / 10_000
         _available = _income_m - _loan_m - _ins_m - _my_living_m
 
         st.markdown("**👤 自分の収支**")
@@ -908,7 +938,7 @@ else:
             birth = ch["birth"]
             age   = year - birth
             if 0 <= age <= 2:   total += 17_800 * 12
-            elif 3 <= age <= 5: pass
+            elif 3 <= age <= 5: total += KINDER_COST.get(ch.get("kinder", "公立幼稚園"), 220_000)
             elif 6 <= age <= 11: total += ELEM_COST[ch["elem"]]
             elif 12 <= age <= 14: total += MID_COST[ch["mid"]]
             elif 15 <= age <= 17: total += HIGH_COST[ch["high"]]
@@ -967,14 +997,17 @@ else:
                 ret_bonus = retirement_amt if age == retirement_age else 0
                 income    = monthly * 12 + bonus + wife_yr + side_yr + ret_bonus
             else:
-                income = 0
+                # FIRE後: 本人収入ゼロ、配偶者収入・副業収入は継続
+                wife_yr  = get_wife_income_for_age(age)
+                side_yr  = get_side_income(age)
+                income   = wife_yr + side_yr
 
             # ローン
             loan_rate = loan_rate_future if age >= rate_change_age else loan_rate_now
             if loan_b > 0:
-                interest  = loan_b * loan_rate
-                principal = monthly_loan_pmt * 12 - interest
-                loan_b    = max(0, loan_b - principal)
+                interest    = loan_b * loan_rate
+                principal   = max(0.0, monthly_loan_pmt * 12 - interest)
+                loan_b      = max(0.0, loan_b - principal)
                 loan_pmt_yr = monthly_loan_pmt * 12
             else:
                 loan_pmt_yr = 0
@@ -1004,8 +1037,20 @@ else:
             ideco  = ideco * (1 + ideco_return) + invest_ideco
             other  = other * (1 + other_return) + invest_other
 
-            surplus = balance - invest_nisa - invest_ideco - invest_other
-            deposit = deposit + (surplus * 0.7 if surplus > 0 else surplus)
+            if not retired:
+                surplus = balance - invest_nisa - invest_ideco - invest_other
+                deposit = deposit + (surplus * 0.7 if surplus > 0 else surplus)
+            else:
+                # FIRE後: 収入で賄えない分だけ資産から取り崩す（預金→その他→NISA→iDeCo）
+                to_draw = float(max(0.0, expense - income))
+                if to_draw > 0:
+                    d_draw = min(max(0.0, deposit), to_draw); deposit -= d_draw; to_draw -= d_draw
+                    o_draw = min(max(0.0, other),   to_draw); other   -= o_draw; to_draw -= o_draw
+                    n_draw = min(max(0.0, nisa),    to_draw); nisa    -= n_draw; to_draw -= n_draw
+                    i_draw = min(max(0.0, ideco),   to_draw); ideco   -= i_draw; to_draw -= i_draw
+                    deposit -= to_draw  # 全資産枯渇時のみdepositがマイナスに
+                elif balance > 0:
+                    deposit += balance * 0.7  # 配偶者収入が支出超過の場合は余剰を預金へ
 
             net_assets = nisa + ideco + max(0, deposit) + other - loan_b
 
@@ -1135,6 +1180,8 @@ else:
             marker_color="#42A5F5"), row=3, col=1)
         fig.add_trace(go.Bar(x=x_labels, y=df["教育費"]/10_000, name="教育費",
             marker_color="#AB47BC"), row=3, col=1)
+        fig.add_trace(go.Bar(x=x_labels, y=df["習い事"]/10_000, name="習い事",
+            marker_color="#7E57C2"), row=3, col=1)
         fig.add_trace(go.Bar(x=x_labels, y=df["保険料"]/10_000, name="保険料",
             marker_color="#FFA726"), row=3, col=1)
         fig.add_trace(go.Bar(x=x_labels, y=df["特別支出"]/10_000, name="特別支出",
